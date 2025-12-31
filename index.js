@@ -135,6 +135,14 @@ function formatNumber(n) {
     } catch (e) { return String(n); }
 }
 
+function formatGexpShort(n) {
+    if (n === null || n === undefined) return "0";
+    n = Number(n) || 0;
+    if (n >= 1e3) return (Math.round((n / 1e3) * 100) / 100) + "k";
+    return Math.round(n).toString();
+}
+
+
 function handleError(msg, err) {
     if (shouldSuppressErrors()) {
         ChatLib.chat(`&e[&dGuildUtils&e]&c ${msg}`);
@@ -175,7 +183,7 @@ function buildReplyMessage({ lvl, name, guildInfo, cataLevel, networth }) {
         `&aCata: &b${cataStr}`,
         `&aNetworth: &b${nwStr}`,
         `&aDays in guild: &b${guildInfo.timeInGuild || "N/A"}`,
-        `&aWeekly GEXP: &b${formatGexp(guildInfo.totalWeeklyGexp)}`,
+        `&aWeekly GEXP: &b${formatGexpShort(guildInfo.totalWeeklyGexp)}`,
         `&aGuild Size: &b${guildInfo.memberCount || 0}/125`,
         `&5(Click to Party)`
     ].join("\n");
