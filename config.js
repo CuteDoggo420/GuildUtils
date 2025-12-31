@@ -7,9 +7,25 @@ const defaultConf = new DefaultConfig("GuildUtils", "data/settings.json")
         configName: "SminLevel",
         title: "Minimum Level",
         description: "Lowest level players to get guild details on",
-        category: "General",
+        category: "Requirements",
         value: "200",
         placeHolder: "200"
+    })
+    .addTextInput({
+        configName: "SminCata",
+        title: "Minimum Catacombs Level",
+        description: "Minimum Catacombs level required (fractional values allowed, e.g. 50.5). Leave empty to disable.",
+        category: "Requirements",
+        value: "",
+        placeHolder: "0"
+    })
+    .addTextInput({
+        configName: "SminNw",
+        title: "Minimum Networth",
+        description: "Minimum Networth required (numbers only, no commas). Leave empty to disable.",
+        category: "Requirements",
+        value: "",
+        placeHolder: "1m"
     })
     .addSwitch({
         configName: "SreplyIfGuilded",
@@ -40,6 +56,7 @@ const defaultConf = new DefaultConfig("GuildUtils", "data/settings.json")
         category: "Dev",
         value: true
     })
+
 
 const currentScheme = "data/ColorScheme.json"
 const scheme = JSON.parse(FileLib.read("GuildUtils", currentScheme))

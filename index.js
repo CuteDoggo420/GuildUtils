@@ -3,11 +3,57 @@ import config from "./config.js"
 function getApiBase() {
     return config.DcustomApiServer && config.DcustomApiServer.length > 0
         ? config.DcustomApiServer
-        : "https://api.guildutils.buzz/player";  // this website should exist very soon!
+        : "https://api.guildutils.buzz/player";
 }
 
 function getMinLevel() {
     return config.SminLevel && config.SminLevel.length > 0 ? parseInt(config.SminLevel) : 0;
+}
+function hasMinLevel() {
+    return config.SminLevel && config.SminLevel.length > 0;
+}
+
+function getMinCata() {
+    return config.SminCata && config.SminCata.length > 0 ? parseFloat(config.SminCata) : 0;
+}
+function hasMinCata() {
+    return config.SminCata && config.SminCata.length > 0;
+}
+
+function parseNetworthInput(str) {
+    if (!str || String(str).trim() === "") return 0;
+    const s = String(str).trim().toLowerCase();
+    const last = s[s.length - 1];
+    let num = parseFloat(s.replace(/,/g, ""));
+    if (Number.isNaN(num)) return 0;
+    if (last === "b") return num * 1e9;
+    if (last === "m") return num * 1e6;
+    if (last === "k") return num * 1e3;
+    return num;
+}
+function getMinNw() {
+    return parseNetworthInput(config.SminNw);
+}
+function hasMinNw() {
+    return config.SminNw && config.SminNw.length > 0;
+}
+
+function formatNwSuffix(n) {
+    if (n === null || n === undefined) return "0";
+    n = Number(n) || 0;
+    if (n >= 1e9) {
+        const v = (n / 1e9);
+        return (Math.round(v * 100) / 100).toString().replace(/\.0$/, "") + "b";
+    }
+    if (n >= 1e6) {
+        const v = (n / 1e6);
+        return (Math.round(v * 100) / 100).toString().replace(/\.0$/, "") + "m";
+    }
+    if (n >= 1e3) {
+        const v = (n / 1e3);
+        return (Math.round(v * 100) / 100).toString().replace(/\.0$/, "") + "k";
+    }
+    return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 function shouldReplyIfGuilded() {
@@ -76,6 +122,13 @@ function formatGexp(xp) {
     if (!xp) return "0";
     return xp.toLocaleString();
 }
+function formatNumber(n) {
+    if (n === null || n === undefined) return "0";
+    if (typeof n === "number" && !Number.isFinite(n)) return "0";
+    try {
+        return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    } catch (e) { return String(n); }
+}
 
 function handleError(msg, err) {
     if (shouldSuppressErrors()) {
@@ -99,35 +152,42 @@ function showHelp() {
     ChatLib.chat("&9&l---------------------------------------------");
 }
 
-function buildReplyMessage({ lvl, name, guildInfo }) {
+function buildReplyMessage({ lvl, name, guildInfo, cataLevel, networth }) {
+    const cataStr = cataLevel !== undefined && cataLevel !== null ? (typeof cataLevel === "number" ? cataLevel.toFixed(2) : String(cataLevel)) : "N/A";
+    const nwStr = networth !== undefined && networth !== null ? formatNwSuffix(networth) : "0";
+
     if (!guildInfo || !guildInfo.inGuild) {
         return new Message(
             new TextComponent(`&8[${getLevelColor(lvl)}${lvl}&8] &b${name} &6is not in a guild!`).setClick("run_command", `/p ${name}`)
-                .setHoverValue("Click to party this player!")
+                .setHoverValue(`&aLevel: &b${lvl}\n&aCata: &b${cataStr}\n&aNetworth: &b${nwStr}\n&aClick to party this player`)
         );
     }
     const tagColor = `&${getTagColorCode(guildInfo.guildTagColor)}`;
+    const hover = [
+        `&aGuild: ${tagColor}${guildInfo.guildName}`,
+        `&aRank: &b${guildInfo.rank || "Member"}`,
+        `&aLevel: &b${lvl}`,
+        `&aCata: &b${cataStr}`,
+        `&aNetworth: &b${nwStr}`,
+        `&aDays in guild: &b${guildInfo.timeInGuild || "N/A"}`,
+        `&aWeekly GEXP: &b${formatGexp(guildInfo.totalWeeklyGexp)}`,
+        `&aGuild Size: &b${guildInfo.memberCount || 0}/125`,
+        `&5(Click to Party)`
+    ].join("\n");
+
     if (shouldCleanGuildMessages()) {
         return new Message(
             new TextComponent(`&8[${getLevelColor(lvl)}${lvl}&8] &b${name} ${tagColor}[${guildInfo.guildTag}] &7(${guildInfo.guildName})`).setClick("run_command", `/p ${name}`)
-                .setHoverValue(
-                    `&aGuild: ${tagColor}${guildInfo.guildName}\n&aRank: &b${guildInfo.rank}\n&aDays in guild: &b${guildInfo.timeInGuild}\n&aWeekly GEXP: &b${formatGexp(guildInfo.totalWeeklyGexp)}\n&aGuild Size: &b${guildInfo.memberCount}/125\n&5(Click to Party)`
-                )
+                .setHoverValue(hover)
         );
-    } else if (shouldReplyIfGuilded()) {
+    } else {
         return new Message(
             new TextComponent(
-                `&8[${getLevelColor(lvl)}${lvl}&8] &b${name} &7is in ${tagColor}${guildInfo.guildName} &7as ${tagColor}${guildInfo.rank} &8(${formatGexp(guildInfo.totalWeeklyGexp)} GEXP)`
+                `&8[${getLevelColor(lvl)}${lvl}&8] &b${name} &7is in ${tagColor}${guildInfo.guildName} &7as ${tagColor}${guildInfo.rank || "Member"} &8(${formatGexp(guildInfo.totalWeeklyGexp)} GEXP)`
             ).setClick("run_command", `/p ${name}`)
-             .setHoverValue(`Click to party ${name}`)
+             .setHoverValue(hover)
         );
     }
-    return new Message(
-        new TextComponent(
-            `&8[${getLevelColor(lvl)}${lvl}&8] &b${name} &7is in ${tagColor}${guildInfo.guildName} &7as ${tagColor}${guildInfo.rank} &8(${formatGexp(guildInfo.totalWeeklyGexp)} GEXP)`
-        ).setClick("run_command", `/p ${name}`)
-         .setHoverValue(`Click to party ${name}`)
-    );
 }
 
 register("command", function (...args) {
@@ -153,13 +213,26 @@ register("command", function (...args) {
     if (sub === "lobby") {
         const me = Player.getName();
         const names = World.getAllPlayers().map(p => p.getName()).filter(n => n && n !== me);
-        ChatLib.chat(`&e[&dGuildUtils&e]&a Checking lobby players above lvl ${getMinLevel()}...`);
+        const activeFilters = [];
+        if (hasMinLevel()) activeFilters.push(`lvl ${getMinLevel()}`);
+        if (hasMinCata()) activeFilters.push(`cata ${getMinCata()}`);
+        if (hasMinNw()) activeFilters.push(`nw ${formatNwSuffix(getMinNw())}`);
+        const filtersText = activeFilters.length ? ` with filters: ${activeFilters.join(", ")}` : "";
+        ChatLib.chat(`&e[&dGuildUtils&e]&a Checking lobby players${filtersText}...`);
         let apiOverloaded = false;
         new java.lang.Thread(() => {
             names.forEach(name => {
                 if (apiOverloaded) return;
                 try {
-                    const url = getApiBase() + `?name=${encodeURIComponent(name)}&minlevel=${getMinLevel()}`;
+                    let url = getApiBase() + `?name=${encodeURIComponent(name)}`;
+                    if (!hasMinLevel() && !hasMinCata() && !hasMinNw()) {
+                        url += `&minlevel=0`;
+                    } else {
+                        if (hasMinLevel()) url += `&minlevel=${getMinLevel()}`;
+                        if (hasMinCata()) url += `&mincata=${getMinCata()}`;
+                        if (hasMinNw()) url += `&minnw=${getMinNw()}`;
+                    }
+
                     let raw = httpGet(url);
                     let data;
                     try {
@@ -185,9 +258,11 @@ register("command", function (...args) {
                         }
                         return;
                     }
-                    if (!data.aboveMinlevel) return;
+                    if (!data.passesAll) return;
                     const lvl = data.level;
-                ChatLib.chat(buildReplyMessage({lvl,name,guildInfo: data.guild_info}));
+                    const cata = data.cataLevel;
+                    const nw = data.networth;
+                    ChatLib.chat(buildReplyMessage({lvl, name, guildInfo: data.guild_info, cataLevel: cata, networth: nw}));
                     java.lang.Thread.sleep(150);
                 } catch (e) {
                     handleError(`Failed for ${name}`, e);
@@ -208,7 +283,15 @@ register("command", function (...args) {
         ChatLib.chat(`&e[&dGuildUtils&e]&a Checking player: ${name}`);
         new java.lang.Thread(() => {
             try {
-                const url = getApiBase() + `?name=${encodeURIComponent(name)}&minlevel=0`;
+                let url = getApiBase() + `?name=${encodeURIComponent(name)}`;
+                if (!hasMinLevel() && !hasMinCata() && !hasMinNw()) {
+                    url += `&minlevel=0`;
+                } else {
+                    if (hasMinLevel()) url += `&minlevel=${getMinLevel()}`;
+                    if (hasMinCata()) url += `&mincata=${getMinCata()}`;
+                    if (hasMinNw()) url += `&minnw=${getMinNw()}`;
+                }
+
                 const raw = httpGet(url);
                 const data = JSON.parse(raw);
                 if (!data.uuidFound) {
@@ -220,7 +303,9 @@ register("command", function (...args) {
                     return;
                 }
                 const lvl = data.level;
-                ChatLib.chat(buildReplyMessage({lvl,name,guildInfo: data.guild_info}));
+                const cata = data.cataLevel;
+                const nw = data.networth;
+                ChatLib.chat(buildReplyMessage({lvl, name, guildInfo: data.guild_info, cataLevel: cata, networth: nw}));
             } catch (e) {
                 handleError(`Failed for ${name}`, e);
             }
