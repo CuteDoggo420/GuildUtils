@@ -1,0 +1,7 @@
+{
+  "name": "GuildUtils",
+  "description": "&2Some useful guild recruitment tools :3",
+  "creator": "CuteDoggo420",
+  "version": "2.3.3",
+  "entry": "index.js"
+}

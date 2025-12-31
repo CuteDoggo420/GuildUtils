@@ -1,0 +1,37 @@
+[
+    {
+        "category": "General",
+        "settings": [
+            {
+                "type": 4,
+                "name": "SminLevel",
+                "value": "300"
+            },
+            {
+                "type": 6,
+                "name": "SreplyIfGuilded",
+                "value": true
+            },
+            {
+                "type": 6,
+                "name": "ScleanGuildMessages",
+                "value": true
+            }
+        ]
+    },
+    {
+        "category": "Dev",
+        "settings": [
+            {
+                "type": 4,
+                "name": "DcustomApiServer",
+                "value": ""
+            },
+            {
+                "type": 6,
+                "name": "DsupressErrors",
+                "value": true
+            }
+        ]
+    }
+]
