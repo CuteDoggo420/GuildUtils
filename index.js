@@ -68,6 +68,11 @@ function shouldSuppressErrors() {
     return config.DsupressErrors !== false;
 }
 
+function shouldShowPlayer(guildInfo) {
+    if (guildInfo && guildInfo.inGuild && !shouldReplyIfGuilded()) return false;
+    return true;
+}
+
 function httpGet(urlStr) {
     const URL = Java.type("java.net.URL");
     const BufferedReader = Java.type("java.io.BufferedReader");
@@ -262,6 +267,8 @@ register("command", function (...args) {
                     const lvl = data.level;
                     const cata = data.cataLevel;
                     const nw = data.networth;
+                    if (!shouldShowPlayer(data.guild_info)) return;
+
                     ChatLib.chat(buildReplyMessage({lvl, name, guildInfo: data.guild_info, cataLevel: cata, networth: nw}));
                     java.lang.Thread.sleep(150);
                 } catch (e) {
