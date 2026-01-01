@@ -41,6 +41,20 @@ const defaultConf = new DefaultConfig("GuildUtils", "data/settings.json")
         category: "General",
         value: true
     })
+    .addSwitch({
+        configName: "SshowCataExpanded",
+        title: "Show Cata in expanded message",
+        description: "Shows Catacombs level in reply message",
+        category: "General",
+        value: true
+    })
+    .addSwitch({
+        configName: "SshowNwExpanded",
+        title: "Show Networth in expanded message",
+        description: "Shows Networth in reply message",
+        category: "General",
+        value: true
+    })
     .addTextInput({
         configName: "DcustomApiServer",
         title: "Custom API server",

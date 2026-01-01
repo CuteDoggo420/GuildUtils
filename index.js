@@ -73,6 +73,14 @@ function shouldShowPlayer(guildInfo) {
     return true;
 }
 
+function shouldShowCataExpanded() {
+    return !!config.SshowCataExpanded;
+}
+
+function shouldShowNwExpanded() {
+    return !!config.SshowNwExpanded;
+}
+
 function httpGet(urlStr) {
     const URL = Java.type("java.net.URL");
     const BufferedReader = Java.type("java.io.BufferedReader");
@@ -139,6 +147,7 @@ function formatGexpShort(n) {
     if (n === null || n === undefined) return "0";
     n = Number(n) || 0;
     if (n >= 1e3) return (Math.round((n / 1e3) * 100) / 100) + "k";
+
     return Math.round(n).toString();
 }
 
@@ -164,6 +173,23 @@ function showHelp() {
     ChatLib.chat("&a/gu settings &b- Open settings");
     ChatLib.chat("&9&l---------------------------------------------");
 }
+function extraReplyOptions(cataLevel, networth) {
+    if (!shouldShowCataExpanded() && !shouldShowNwExpanded()) return "";
+
+    const parts = [];
+
+    if (shouldShowCataExpanded() && cataLevel !== null && cataLevel !== undefined) {
+        parts.push(`&9${cataLevel.toFixed(2)}`);
+    }
+
+    if (shouldShowNwExpanded() && networth !== null && networth !== undefined) {
+        parts.push(`&6${formatNwSuffix(networth)}`);
+    }
+
+    if (!parts.length) return "";
+
+    return ` &8(${parts.join(" &8| ")}&8)`;
+}
 
 function buildReplyMessage({ lvl, name, guildInfo, cataLevel, networth }) {
     const cataStr = cataLevel !== undefined && cataLevel !== null ? (typeof cataLevel === "number" ? cataLevel.toFixed(2) : String(cataLevel)) : "N/A";
@@ -171,8 +197,8 @@ function buildReplyMessage({ lvl, name, guildInfo, cataLevel, networth }) {
 
     if (!guildInfo || !guildInfo.inGuild) {
         return new Message(
-            new TextComponent(`&8[${getLevelColor(lvl)}${lvl}&8] &b${name} &6is not in a guild!`).setClick("run_command", `/p ${name}`)
-                .setHoverValue(`&aLevel: &b${lvl}\n&aCata: &b${cataStr}\n&aNetworth: &b${nwStr}\n&aClick to party this player`)
+            new TextComponent(`&8[${getLevelColor(lvl)}${lvl}&8] &b${name} ${extraReplyOptions(cataLevel, networth)} &6is not in a guild!`).setClick("run_command", `/p ${name}`)
+                .setHoverValue(`&aClick to party this player`)
         );
     }
     const tagColor = `&${getTagColorCode(guildInfo.guildTagColor)}`;
@@ -190,13 +216,13 @@ function buildReplyMessage({ lvl, name, guildInfo, cataLevel, networth }) {
 
     if (shouldCleanGuildMessages()) {
         return new Message(
-            new TextComponent(`&8[${getLevelColor(lvl)}${lvl}&8] &b${name} ${tagColor}[${guildInfo.guildTag}] &7(${guildInfo.guildName})`).setClick("run_command", `/p ${name}`)
+            new TextComponent(`&8[${getLevelColor(lvl)}${lvl}&8] &b${name} ${extraReplyOptions(cataLevel, networth)} ${tagColor}[${guildInfo.guildTag}] &7(${guildInfo.guildName})`).setClick("run_command", `/p ${name}`)
                 .setHoverValue(hover)
         );
     } else {
         return new Message(
             new TextComponent(
-                `&8[${getLevelColor(lvl)}${lvl}&8] &b${name} &7is in ${tagColor}${guildInfo.guildName} &7as ${tagColor}${guildInfo.rank || "Member"} &8(${formatGexp(guildInfo.totalWeeklyGexp)} GEXP)`
+                `&8[${getLevelColor(lvl)}${lvl}&8] &b${name} ${extraReplyOptions(cataLevel, networth)} &7is in ${tagColor}${guildInfo.guildName} &7as ${tagColor}${guildInfo.rank || "Member"} &8(${formatGexp(guildInfo.totalWeeklyGexp)} GEXP)`
             ).setClick("run_command", `/p ${name}`)
              .setHoverValue(hover)
         );
